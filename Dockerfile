@@ -1,6 +1,11 @@
 FROM ubuntu:22.04
 
-# প্রয়োজনীয় প্যাকেজ এবং Tailscale ইনস্টল
+# apt-get এরর 100 ফিক্স করার জন্য মিরর পরিবর্তন এবং IPv4 ফোর্স করা
+RUN sed -i 's/archive.ubuntu.com/mirror.math.princeton.edu/g' /etc/apt/sources.list && \
+    sed -i 's/security.ubuntu.com/mirror.math.princeton.edu/g' /etc/apt/sources.list && \
+    echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
+
+# এবার প্রয়োজনীয় প্যাকেজ এবং Tailscale ইনস্টল
 RUN apt-get update && apt-get install -y \
     curl wget git sudo nano openssh-server \
     && curl -fsSL https://tailscale.com/install.sh | sh \
