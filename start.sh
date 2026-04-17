@@ -1,15 +1,21 @@
 #!/bin/bash
+set -e
 
-# SSH এবং Tailscale চালু করা
-sudo service ssh start
-sudo tailscaled --tun=userspace-networking --socks5-server=localhost:1055 &
-sleep 3
+mkdir -p /var/run/sshd /var/lib/tailscale
 
-# Tailscale-এ কানেক্ট করা (Secret থেকে Key নেবে)
+# tailscaled চালু
+tailscaled --tun=userspace-networking --state=/var/lib/tailscale/tailscaled.state &
+TS_PID=$!
+
+sleep 5
+
+# auth key থাকলে connect করবে
 if [ -n "$TAILSCALE_AUTHKEY" ]; then
-    sudo tailscale up --authkey=${TAILSCALE_AUTHKEY} --hostname=render-ubuntu
+    tailscale up --authkey="${TAILSCALE_AUTHKEY}" --hostname=render-ubuntu
 fi
 
-# Render-এর পোর্ট রিকোয়ারমেন্ট মেটানোর জন্য ttyd রান করানো
-PORT=${PORT:-10000}
-ttyd -p $PORT -W bash
+# debug দরকার হলে Tailscale IP দেখাবে
+tailscale ip || true
+
+# ssh server foreground-এ চালু থাকবে
+exec /usr/sbin/sshd -D -e
